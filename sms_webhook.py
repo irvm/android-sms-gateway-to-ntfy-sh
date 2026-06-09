@@ -1,6 +1,14 @@
 from flask import Flask, request, jsonify
 import requests
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
@@ -11,7 +19,7 @@ PORT = int(os.getenv("PORT", "5049"))
 
 def send_ntfy(title, text):
     if not NTFY_TOPIC:
-        print("Error: NTFY_TOPIC is not set.")
+        logger.error("NTFY_TOPIC is not set.")
         return 500, "Missing NTFY_TOPIC"
 
     url = f"{NTFY_URL}/{NTFY_TOPIC}"
@@ -26,9 +34,10 @@ def send_ntfy(title, text):
             },
             timeout=10
         )
+        logger.info(f"Ntfy response: {response.status_code}")
         return response.status_code, response.text
     except Exception as e:
-        print(f"Error sending to ntfy: {e}")
+        logger.exception("Error sending to ntfy")
         return 500, str(e)
 
 @app.route("/", methods=["GET"])
@@ -38,6 +47,7 @@ def index():
 @app.route("/sms-webhook", methods=["POST"])
 def sms_webhook():
     data = request.get_json(silent=True) or {}
+    logger.info(f"Received webhook: {data.get('event', 'unknown')}")
     
     event = data.get("event", "unknown")
     payload = data.get("payload") or {}
@@ -57,5 +67,5 @@ def sms_webhook():
 
 if __name__ == "__main__":
     if not NTFY_TOPIC:
-        print("WARNING: NTFY_TOPIC environment variable is not set!")
+        logger.warning("NTFY_TOPIC environment variable is not set!")
     app.run(host="0.0.0.0", port=PORT)

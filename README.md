@@ -24,10 +24,43 @@ Simple Python webhook to forward SMS messages from [android-sms-gateway](https:/
    python sms_webhook.py
    ```
 
-## Configuration (Android App)
+## Configuration (Webhook Registration)
 
-In the app settings, set the Webhook URL to:
-`http://localhost:5049/sms-webhook`
+Webhooks must be registered via the API using `curl` in Termux. You will need your **Login**, **Password**, and **Server URL** from the Android app's "Home" tab.
+
+### Registration Command
+Replace `LOGIN`, `PASSWORD`, and `SERVER_URL` with values from your app:
+
+```bash
+curl -X POST -u "LOGIN:PASSWORD" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "url": "http://127.0.0.1:5049/sms-webhook",
+           "event": "sms:received"
+         }' \
+     SERVER_URL/3rdparty/v1/webhooks
+```
+*(Note: If the Server URL in your app already contains `/3rdparty/v1/webhooks` or ends with `/webhooks`, adjust the command accordingly. For most users, adding `/3rdparty/v1/webhooks` to the base URL works.)*
+
+### List Registered Webhooks
+To verify your registration:
+```bash
+curl -u "LOGIN:PASSWORD" SERVER_URL/3rdparty/v1/webhooks
+```
+
+## Automation (Termux:Boot)
+
+To run the webhook automatically when your phone starts:
+
+1. Install the [Termux:Boot](https://github.com/termux/termux-boot) app.
+2. Open the Termux:Boot app once to register it.
+3. Create the boot directory and copy the script:
+   ```bash
+   mkdir -p ~/.termux/boot
+   cp ~/android-sms-gateway-to-ntfy-sh/start_webhook.sh ~/.termux/boot/
+   chmod +x ~/.termux/boot/start_webhook.sh
+   ```
+4. **Important:** Edit `~/.termux/boot/start_webhook.sh` and set your `NTFY_TOPIC`.
 
 ## Environment Variables
 
