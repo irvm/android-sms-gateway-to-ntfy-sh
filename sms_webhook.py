@@ -17,6 +17,9 @@ NTFY_TOPIC = os.getenv("NTFY_TOPIC")
 NTFY_URL = os.getenv("NTFY_URL", "https://ntfy.sh").rstrip("/")
 PORT = int(os.getenv("PORT", "5049"))
 
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 def send_ntfy(title, text):
     if not NTFY_TOPIC:
         logger.error("NTFY_TOPIC is not set.")
@@ -24,20 +27,32 @@ def send_ntfy(title, text):
 
     url = f"{NTFY_URL}/{NTFY_TOPIC}"
 
+    # Setup retry strategy
+    retry_strategy = Retry(
+        total=3,  # Total number of retries
+        backoff_factor=2,  # Wait 2, 4, 8 seconds between retries
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["POST"]
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session = requests.Session()
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+
     try:
-        response = requests.post(
+        response = session.post(
             url,
             data=text.encode("utf-8"),
             headers={
                 "Title": title,
                 "Tags": "message,incoming_envelope"
             },
-            timeout=10
+            timeout=15  # Slightly longer timeout
         )
         logger.info(f"Ntfy response: {response.status_code}")
         return response.status_code, response.text
     except Exception as e:
-        logger.exception("Error sending to ntfy")
+        logger.exception("Error sending to ntfy after retries")
         return 500, str(e)
 
 @app.route("/", methods=["GET"])

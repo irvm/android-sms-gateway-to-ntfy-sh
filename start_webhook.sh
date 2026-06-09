@@ -9,8 +9,8 @@ export NTFY_TOPIC="your_topic_here"
 # Path to the project
 PROJECT_DIR="$HOME/android-sms-gateway-to-ntfy-sh"
 
-# Wait for network to be ready (optional but recommended for boot scripts)
-sleep 5
+# Wait for network to be ready
+sleep 30
 
 if [ -d "$PROJECT_DIR" ]; then
     cd "$PROJECT_DIR"
