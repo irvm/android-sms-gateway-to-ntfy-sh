@@ -27,10 +27,10 @@ def send_ntfy(title, text):
 
     url = f"{NTFY_URL}/{NTFY_TOPIC}"
 
-    # Setup retry strategy
+    # Setup faster retry strategy
     retry_strategy = Retry(
-        total=3,  # Total number of retries
-        backoff_factor=2,  # Wait 2, 4, 8 seconds between retries
+        total=2,  # Reduced to 2
+        backoff_factor=1,  # Faster backoff
         status_forcelist=[429, 500, 502, 503, 504],
         allowed_methods=["POST"]
     )
@@ -47,12 +47,12 @@ def send_ntfy(title, text):
                 "Title": title,
                 "Tags": "message,incoming_envelope"
             },
-            timeout=15  # Slightly longer timeout
+            timeout=8  # Shorter timeout
         )
         logger.info(f"Ntfy response: {response.status_code}")
         return response.status_code, response.text
     except Exception as e:
-        logger.exception("Error sending to ntfy after retries")
+        logger.error(f"Failed to send to ntfy: {e}")
         return 500, str(e)
 
 @app.route("/", methods=["GET"])
@@ -62,10 +62,12 @@ def index():
 @app.route("/sms-webhook", methods=["POST"])
 def sms_webhook():
     data = request.get_json(silent=True) or {}
-    logger.info(f"Received webhook: {data.get('event', 'unknown')}")
+    payload = data.get("payload") or {}
+    msg_id = payload.get("id", "no-id")
+    
+    logger.info(f"Received webhook: {data.get('event', 'unknown')} (ID: {msg_id})")
     
     event = data.get("event", "unknown")
-    payload = data.get("payload") or {}
 
     sender = payload.get("sender") or payload.get("phoneNumber") or "Unknown"
     message = payload.get("message") or payload.get("data") or "(no text)"
