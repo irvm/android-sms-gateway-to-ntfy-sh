@@ -26,26 +26,25 @@ Simple Python webhook to forward SMS messages from [android-sms-gateway](https:/
 
 ## Configuration (Webhook Registration)
 
-Webhooks must be registered via the API using `curl` in Termux. You will need your **Login**, **Password**, and **Server URL** from the Android app's "Home" tab.
+Webhooks must be registered via the API using `curl` in Termux. Make sure to enable the **Local Server** in the app settings. You will need your **Login**, **Password**, and **IP Address** from the Android app's "Home" tab.
 
 ### Registration Command
-Replace `LOGIN`, `PASSWORD`, and `SERVER_URL` with values from your app:
+Replace `USERNAME`, `PASSWORD`, and `IP_ADDRESS` with values from your app:
 
 ```bash
-curl -X POST -u "LOGIN:PASSWORD" \
+curl -X POST -u "USERNAME:PASSWORD" \
      -H "Content-Type: application/json" \
      -d '{
            "url": "http://127.0.0.1:5049/sms-webhook",
            "event": "sms:received"
          }' \
-     SERVER_URL/3rdparty/v1/webhooks
+     http://IP_ADDRESS:8080/webhooks
 ```
-*(Note: If the Server URL in your app already contains `/3rdparty/v1/webhooks` or ends with `/webhooks`, adjust the command accordingly. For most users, adding `/3rdparty/v1/webhooks` to the base URL works.)*
 
 ### List Registered Webhooks
 To verify your registration:
 ```bash
-curl -u "LOGIN:PASSWORD" SERVER_URL/3rdparty/v1/webhooks
+curl -u "USERNAME:PASSWORD" http://IP_ADDRESS:8080/webhooks
 ```
 
 ## Automation (Termux:Boot)
